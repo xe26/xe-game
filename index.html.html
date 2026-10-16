@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XE.gr - Πραγματική ή AI;</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #111;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .top-bar {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 10;
+            font-size: 18px;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* STYLES ΓΙΑ ΤΟΝ ΤΙΤΛΟ */
+        .game-title {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            font-size: 24px;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.75);
+            padding: 8px 18px;
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            white-space: nowrap;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: row; /* Desktop layout */
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+
+        .card {
+            flex: 1;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            text-align: center;
+            padding: 20px;
+            transition: background-image 0.5s ease-in-out;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.45);
+        }
+
+        .content {
+            position: relative;
+            z-index: 2;
+            max-width: 90%;
+        }
+
+        .location {
+            font-size: 28px;
+            font-weight: bold;
+            background: #ffdc08;
+            color: #111;
+            padding: 8px 18px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        .details {
+            font-size: 16px;
+            background: rgba(0, 0, 0, 0.75);
+            padding: 6px 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+
+        .vs-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background-color: #fff;
+            color: #111;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 20px;
+            z-index: 5;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .btn-guess {
+            padding: 12px 32px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #28a745;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .btn-guess:hover {
+            background-color: #218838;
+            transform: scale(1.05);
+        }
+
+        /* CREDITS STYLES */
+        .credits {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            z-index: 10;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 4px 10px;
+            border-radius: 4px;
+            backdrop-filter: blur(3px);
+        }
+
+        .credits a {
+            color: #ffdc08;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .credits a:hover {
+            text-decoration: underline;
+        }
+
+        /* POPUP MODAL STYLES */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: #222;
+            padding: 25px 30px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 420px;
+            width: 85%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border: 1px solid #333;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .modal-title.correct { color: #28a745; }
+        .modal-title.wrong { color: #dc3545; }
+        .modal-title.complete { color: #ffdc08; }
+
+        .modal-body {
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+
+        .modal-body a.property-link {
+            color: #ffdc08;
+            text-decoration: underline;
+            font-weight: bold;
+        }
+
+        .modal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-cta {
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #28a745;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+            text-decoration: none;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .btn-cta:hover {
+            background-color: #218838;
+            transform: scale(1.02);
+        }
+
+        .btn-cta.secondary {
+            background-color: #ffdc08;
+            color: #111;
+        }
+
+        .btn-cta.secondary:hover {
+            background-color: #e5c400;
+        }
+
+        /* --- MEDIA QUERIES ΓΙΑ MOBILE VIEW --- */
+        @media (max-width: 768px) {
+            .game-container {
+                flex-direction: column;
+            }
+
+            .game-title {
+                font-size: 13px;
+                padding: 6px 14px;
+                top: 10px;
+                width: 90%;
+                white-space: normal;
+            }
+
+            .top-bar {
+                top: 50px;
+                left: 10px;
+                font-size: 14px;
+                padding: 4px 10px;
+            }
+
+            .location {
+                font-size: 20px;
+                padding: 6px 12px;
+            }
+
+            .details {
+                font-size: 13px;
+                padding: 4px 8px;
+                margin-bottom: 10px;
+            }
+
+            .btn-guess {
+                padding: 10px 24px;
+                font-size: 14px;
+            }
+
+            .vs-circle {
+                width: 46px;
+                height: 46px;
+                font-size: 16px;
+            }
+
+            .credits {
+                font-size: 9px;
+                bottom: 5px;
+                right: 5px;
+                padding: 3px 6px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">Score: <span id="score">0</span></div>
+
+    <!-- Τίτλος Παιχνιδιού -->
+    <div class="game-title">Ποια από τις δύο φωτογραφίες είναι πραγματική;</div>
+
+    <div class="game-container">
+        <!-- Αριστερό Ακίνητο -->
+        <div class="card" id="left-card">
+            <div class="content">
+                <div class="location" id="left-location"></div>
+                <div class="details" id="left-details"></div>
+                <button class="btn-guess" onclick="makeGuess('left')">Είναι Πραγματική</button>
+            </div>
+        </div>
+
+        <div class="vs-circle">Ή</div>
+
+        <!-- Δεξί Ακίνητο -->
+        <div class="card" id="right-card">
+            <div class="content">
+                <div class="location" id="right-location"></div>
+                <div class="details" id="right-details"></div>
+                <button class="btn-guess" onclick="makeGuess('right')">Είναι Πραγματική</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Διακριτικά Credits -->
+    <div class="credits">
+        Τα δεδομένα & οι φωτογραφίες προέρχονται από το <a href="https://www.xe.gr" target="_blank" rel="noopener noreferrer">www.xe.gr</a>
+    </div>
+
+    <!-- Popup Modal -->
+    <div class="modal-overlay" id="result-modal">
+        <div class="modal-content">
+            <div class="modal-title" id="modal-title"></div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-buttons" id="modal-buttons"></div>
+        </div>
+    </div>
+
+    <script>
+        // Ορίζετε εσείς ποια εικόνα είναι AI βάζοντας isAI: true ή isAI: false
+        const properties = [
+            // 1ο Σετ
+            {
+                id: 1,
+                location: "Αθήνα",
+                details: "Διαμέρισμα 75 τ.μ.",
+                isAI: false, // <-- Πραγματική
+                image: "house1.jpg",
+                link: "https://www.xe.gr/property/d/enoikiaseis-katoikion/8615ff61-2be9-4cd0-85ed-c1881400fe84/athhna-plateia-amerikhs-550-75"
+            },
+            {
+                id: 2,
+                location: "Αθήνα",
+                details: "Διαμέρισμα 51 τ.μ.",
+                isAI: true,  // <-- AI Φωτογραφία
+                image: "house2.jpg",
+                link: "#"
+            },
+            // 2ο Σετ
+            {
+                id: 3,
+                location: "Βύρωνας",
+                details: "Διαμέρισμα 122 τ.μ. • 5ος",
+                isAI: true,  // <-- AI Φωτογραφία
+                image: "house3.jpg",
+                link: "https://www.xe.gr/property/d/enoikiaseis-katoikion/3e9f18cb-62f5-473d-bfbb-ebcdacc08ea8/vyrwnas-1600-122"
+            },
+            {
+                id: 4,
+                location: "Αθήνα (Πλάκα)",
+                details: "Διαμέρισμα 126 τ.μ. • Ανακαινισμένο",
+                isAI: false, // <-- Πραγματική
+                image: "house4.jpg",
+                link: "https://www.xe.gr/property/d/enoikiaseis-katoikion/86fe60ed-1bc9-457b-96a3-1d36b262c7b6/athhna-plaka-1550-126"
+            },
+            // 3ο Σετ
+            {
+                id: 5,
+                location: "Αθήνα (Παγκράτι)",
+                details: "Πολυκατοικία 450 τ.μ.",
+                isAI: false, // <-- Πραγματική
+                image: "house5.jpg",
+                link: "https://www.xe.gr/property/d/enoikiaseis-katoikion/a68326f6-13b0-4e31-a307-99a618b071d2/athhna-kypselh-8000-450?widget_name=search%20results%20list&rank_in_widget=15&first_in_widget_ad_id=4ce43bf9-d62f-40cf-9cb3-a653cc3a0cb0"
+            },
+            {
+                id: 6,
+                location: "Μαρούσι ",
+                details: "Πολυκατοικία 264 τ.μ.",
+                isAI: true,  // <-- AI Φωτογραφία
+                image: "house6.jpg",
+                            },
+            // 4ο Σετ
+            {
+                id: 7,
+                location: "Γαλάτσι ",
+                details: "Μονοκατοικία 180 τ.μ.",
+                isAI: true,  // <-- AI Φωτογραφία
+                image: "house7.jpg",
+                link: "https://https://www.xe.gr/property/d/enoikiaseis-katoikion/1170ef39-799d-46cd-853b-e10fa26b1b8a/galatsi-lamprinh-1800-413?widget_name=search%20results%20list&rank_in_widget=15&first_in_widget_ad_id=1cd40513-1d75-4d3b-a0b0-ea787bf72181"
+            },
+            {
+                id: 8,
+                location: "Αθήνα",
+                details: "Πολυκατοικία 413 τ.μ.",
+                isAI: false, // <-- Πραγματική
+                image: "house8.jpg",
+                link: "https://www.xe.gr/property/d/enoikiaseis-katoikion/28511e71-3aaf-4757-ac3c-90b6dba6346f/athhna-agios-nikolaos-650-70"
+            }
+        ];
+
+        let currentRound = 1;
+        const maxRounds = 4;
+        let leftIndex = 0;
+        let rightIndex = 1;
+        let score = 0;
+
+        function updateUI() {
+            const left = properties[leftIndex];
+            const right = properties[rightIndex];
+
+            // Αριστερή κάρτα
+            document.getElementById('left-card').style.backgroundImage = `url('${left.image}')`;
+            document.getElementById('left-location').innerText = left.location;
+            document.getElementById('left-details').innerText = left.details;
+
+            // Δεξιά κάρτα
+            document.getElementById('right-card').style.backgroundImage = `url('${right.image}')`;
+            document.getElementById('right-location').innerText = right.location;
+            document.getElementById('right-details').innerText = right.details;
+
+            document.getElementById('score').innerText = score;
+        }
+
+        function makeGuess(choice) {
+            const left = properties[leftIndex];
+            const right = properties[rightIndex];
+
+            // Ο χρήστης επιλέγει ποια είναι η πραγματική. 
+            // Αν επέλεξε 'left' και το left ΔΕΝ είναι AI (δηλαδή isAI === false), είναι σωστό!
+            const selectedProperty = (choice === 'left') ? left : right;
+            const isCorrect = !selectedProperty.isAI;
+
+            const modal = document.getElementById('result-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const modalButtons = document.getElementById('modal-buttons');
+
+            if (isCorrect) {
+                score++;
+                modalTitle.innerText = "Σωστά!";
+                modalTitle.className = "modal-title correct";
+            } else {
+                modalTitle.innerText = "Λάθος!";
+                modalTitle.className = "modal-title wrong";
+            }
+
+            const leftLabel = left.isAI ? "AI Φωτογραφία 🤖" : "Πραγματική 📸";
+            const rightLabel = right.isAI ? "AI Φωτογραφία 🤖" : "Πραγματική 📸";
+
+            modalBody.innerHTML = `
+                <strong>${left.location} (${left.details}):</strong> ${leftLabel}<br>
+                <strong>${right.location} (${right.details}):</strong> ${rightLabel}
+            `;
+            modalButtons.innerHTML = `<button class="btn-cta" onclick="nextStep()">Συνέχεια</button>`;
+
+            modal.classList.add('active');
+        }
+
+        function nextStep() {
+            document.getElementById('result-modal').classList.remove('active');
+
+            if (currentRound < maxRounds) {
+                currentRound++;
+                leftIndex += 2;
+                rightIndex += 2;
+                updateUI();
+            } else {
+                showFinalSummary();
+            }
+        }
+
+        function showFinalSummary() {
+            const modal = document.getElementById('result-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalBody = document.getElementById('modal-body');
+            const modalButtons = document.getElementById('modal-buttons');
+
+            modalTitle.innerText = "Τέλος Παιχνιδιού!";
+            modalTitle.className = "modal-title complete";
+
+            let message = "";
+            if (score === 4) {
+                message = "Φανταστικό! Ξεχωρίζεις τις AI εικόνες σαν επαγγελματίας!";
+            } else if (score === 3) {
+                message = "Πολύ καλό σκορ! Σχεδόν τις βρήκες όλες!";
+            } else if (score === 2) {
+                message = "Καλή προσπάθεια! Η τεχνητή νοημοσύνη γίνεται όλο και πιο πιστική!";
+            } else {
+                message = "Η AI σε ξεγέλασε! Δοκίμασε ξανά!";
+            }
+
+            modalBody.innerHTML = `<strong>Το συνολικό σου σκορ είναι: ${score} / ${maxRounds}</strong><br><br>${message}`;
+
+            modalButtons.innerHTML = `
+                <button class="btn-cta" onclick="restartGame()">Παίξε ξανά</button>
+                <a class="btn-cta secondary" href="https://www.xe.gr/property/results?transaction_name=rent&item_type=residence&country=GR" target="_blank" rel="noopener noreferrer">
+                    Δες διαμερίσματα στο xe.gr
+                </a>
+            `;
+
+            modal.classList.add('active');
+        }
+
+        function restartGame() {
+            document.getElementById('result-modal').classList.remove('active');
+            score = 0;
+            currentRound = 1;
+            leftIndex = 0;
+            rightIndex = 1;
+            updateUI();
+        }
+
+        // Αρχικοποίηση
+        updateUI();
+    </script>
+</body>
+</html>
